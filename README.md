@@ -23,11 +23,11 @@ const graph = new TransitiveTrustGraph();
 // Add edges (implicitly adds nodes)
 graph.addEdge("A", "B", 0.8);
 graph.addEdge("B", "C", 0.6);
-graph.addEdge("A", "C", 0.4);
+graph.addEdge("C", "D", 0.4);
 
 // Compute trust score
-const trustScore = graph.computeTrustScore("A", "C");
-console.log(`Trust score from A to C: ${trustScore}`);
+const trustScore = graph.computeTrustScore("A", "D");
+console.log(`Trust score from A to D: ${trustScore}`);
 ```
 
 ## API Reference
