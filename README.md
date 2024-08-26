@@ -39,8 +39,8 @@ The main class for creating and manipulating the trust graph.
 #### Methods
 
 - `addNode(node: string): void`: Adds a node to the graph.
-- `addEdge(source: string, target: string, weight: number): void`: Adds an edge to the graph with the specified weight (0 to 1).
-- `computeTrustScore(source: string, target: string): number`: Computes the trust score between two nodes.
+- `addEdge(source: string, target: string, weight: number): void`: Adds an edge to the graph with the specified weight (-1 to 1, exclusive).
+- `computeRawTrustScores(source: string, target: string): { positiveScore: number; negativeScore: number; netScore: number }`: Computes the raw trust scores between two nodes, showing both positive and negative components.
 - `getNodes(): string[]`: Returns an array of all nodes in the graph.
 - `getEdges(): { source: string; target: string; weight: number }[]`: Returns an array of all edges in the graph.
 
