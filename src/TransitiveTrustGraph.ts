@@ -1,11 +1,15 @@
+import Graph from "graphology";
 import { PriorityQueue } from "./PriorityQueue";
 
 /**
  * Represents a graph for computing transitive trust scores.
  */
 export class TransitiveTrustGraph {
-  private nodes: Set<string> = new Set();
-  private edges: Map<string, { target: string; weight: number }[]> = new Map();
+  private graph: Graph;
+
+  constructor() {
+    this.graph = new Graph({ type: "directed", multi: false });
+  }
 
   /**
    * Adds a node to the graph.
@@ -16,9 +20,8 @@ export class TransitiveTrustGraph {
     if (typeof node !== "string" || node.trim() === "") {
       throw new Error("Node must be a non-empty string");
     }
-    this.nodes.add(node);
-    if (!this.edges.has(node)) {
-      this.edges.set(node, []);
+    if (!this.graph.hasNode(node)) {
+      this.graph.addNode(node);
     }
   }
 
@@ -43,12 +46,10 @@ export class TransitiveTrustGraph {
     this.addNode(source);
     this.addNode(target);
 
-    const sourceEdges = this.edges.get(source)!;
-    const existingEdge = sourceEdges.find((e) => e.target === target);
-    if (existingEdge) {
-      existingEdge.weight = weight;
+    if (this.graph.hasEdge(source, target)) {
+      this.graph.setEdgeAttribute(source, target, "weight", weight);
     } else {
-      sourceEdges.push({ target, weight });
+      this.graph.addEdge(source, target, { weight });
     }
   }
 
@@ -60,10 +61,10 @@ export class TransitiveTrustGraph {
    * @throws {Error} If the source or target node is not found in the graph.
    */
   computeTrustScore(source: string, target: string): number {
-    if (!this.nodes.has(source)) {
+    if (!this.graph.hasNode(source)) {
       throw new Error(`Source node "${source}" not found in the graph`);
     }
-    if (!this.nodes.has(target)) {
+    if (!this.graph.hasNode(target)) {
       throw new Error(`Target node "${target}" not found in the graph`);
     }
 
@@ -72,7 +73,7 @@ export class TransitiveTrustGraph {
     const pq = new PriorityQueue<string>();
 
     // Initialize scores and priority queue
-    this.nodes.forEach((node) => {
+    this.graph.forEachNode((node) => {
       const score = node === source ? 1 : 0;
       scores.set(node, score);
       pq.insert(node, score);
@@ -84,10 +85,14 @@ export class TransitiveTrustGraph {
       inspected.add(node);
 
       const nodeScore = scores.get(node)!;
-      const neighbors = this.edges.get(node) || [];
 
-      for (const { target: neighbor, weight } of neighbors) {
+      this.graph.forEachOutNeighbor(node, (neighbor) => {
         if (!inspected.has(neighbor)) {
+          const weight = this.graph.getEdgeAttribute(
+            node,
+            neighbor,
+            "weight"
+          ) as number;
           const oldScore = scores.get(neighbor)!;
           const newScore = oldScore + (nodeScore - oldScore) * weight;
           if (newScore > oldScore) {
@@ -95,7 +100,7 @@ export class TransitiveTrustGraph {
             pq.updatePriority(neighbor, newScore);
           }
         }
-      }
+      });
     }
 
     return Math.max(scores.get(target) || 0, 0);
@@ -106,7 +111,7 @@ export class TransitiveTrustGraph {
    * @returns An array of all nodes.
    */
   getNodes(): string[] {
-    return Array.from(this.nodes);
+    return this.graph.nodes();
   }
 
   /**
@@ -114,12 +119,10 @@ export class TransitiveTrustGraph {
    * @returns An array of objects representing edges.
    */
   getEdges(): { source: string; target: string; weight: number }[] {
-    const edgeList: { source: string; target: string; weight: number }[] = [];
-    this.edges.forEach((targets, source) => {
-      targets.forEach(({ target, weight }) => {
-        edgeList.push({ source, target, weight });
-      });
+    return this.graph.edges().map((edge) => {
+      const [source, target] = this.graph.extremities(edge);
+      const weight = this.graph.getEdgeAttribute(edge, "weight") as number;
+      return { source, target, weight };
     });
-    return edgeList;
   }
 }
