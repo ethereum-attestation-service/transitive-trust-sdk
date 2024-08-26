@@ -1,6 +1,6 @@
 {
-  "name": "transitive-trust-sdk",
-  "version": "1.0.0",
+  "name": "@ethereum-attestation-service/transitive-trust-sdk",
+  "version": "0.0.9",
   "description": "A TypeScript SDK for computing transitive trust scores in a graph",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
