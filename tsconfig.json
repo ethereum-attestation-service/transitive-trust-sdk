@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    /* Docs: https://www.typescriptlang.org/tsconfig */ "target": "ES2022",
+    "module": "commonjs",
+    "outDir": "bin",
+    "rootDir": ".",
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "checkJs": false,
+    "allowJs": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "types": ["node"],
+    "lib": ["es6", "dom"],
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowUnreachableCode": true,
+    "useUnknownInCatchVariables": false, // TypeScript 4.4+ only!
+    "typeRoots": ["./@types", "./node_modules/@types"]
+  },
+  "include": ["./**/*.ts", "./**/*.js"],
+  "exclude": ["node_modules", "<node_internals>/**", "bin"]
+}
