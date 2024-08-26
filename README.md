@@ -1,0 +1,58 @@
+# Transitive Trust SDK
+
+A TypeScript SDK for computing transitive trust scores in a graph.
+
+## Installation
+
+You can install this package using npm:
+
+```bash
+npm install transitive-trust-sdk
+```
+
+## Usage
+
+Here's a basic example of how to use the Transitive Trust SDK:
+
+```typescript
+import { TransitiveTrustGraph } from "transitive-trust-sdk";
+
+// Create a new graph
+const graph = new TransitiveTrustGraph();
+
+// Add edges (implicitly adds nodes)
+graph.addEdge("A", "B", 0.8);
+graph.addEdge("B", "C", 0.6);
+graph.addEdge("A", "C", 0.4);
+
+// Compute trust score
+const trustScore = graph.computeTrustScore("A", "C");
+console.log(`Trust score from A to C: ${trustScore}`);
+```
+
+## API Reference
+
+### `TransitiveTrustGraph`
+
+The main class for creating and manipulating the trust graph.
+
+#### Methods
+
+- `addNode(node: string): void`: Adds a node to the graph.
+- `addEdge(source: string, target: string, weight: number): void`: Adds an edge to the graph with the specified weight (0 to 1).
+- `computeTrustScore(source: string, target: string): number`: Computes the trust score between two nodes.
+- `getNodes(): string[]`: Returns an array of all nodes in the graph.
+- `getEdges(): { source: string; target: string; weight: number }[]`: Returns an array of all edges in the graph.
+
+## Development
+
+To set up the project for development:
+
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Build the project: `npm run build`
+4. Run tests: `npm test`
+
+## License
+
+This project is licensed under the MIT License.
