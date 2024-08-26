@@ -7,7 +7,7 @@ A TypeScript SDK for computing transitive trust scores in a graph.
 You can install this package using npm:
 
 ```bash
-npm install transitive-trust-sdk
+npm install @ethereum-attestation-service/transitive-trust-sdk
 ```
 
 ## Usage
@@ -15,7 +15,7 @@ npm install transitive-trust-sdk
 Here's a basic example of how to use the Transitive Trust SDK:
 
 ```typescript
-import { TransitiveTrustGraph } from "transitive-trust-sdk";
+import { TransitiveTrustGraph } from "@ethereum-attestation-service/transitive-trust-sdk";
 
 // Create a new graph
 const graph = new TransitiveTrustGraph();
