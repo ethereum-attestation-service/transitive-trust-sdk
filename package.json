@@ -1,12 +1,26 @@
 {
   "name": "transitive-trust-sdk",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "A TypeScript SDK for computing transitive trust scores in a graph",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "test": "jest",
+    "prepublishOnly": "npm run build"
   },
-  "keywords": [],
-  "author": "Steve Dakh",
-  "license": "ISC"
+  "keywords": [
+    "trust",
+    "graph",
+    "transitive",
+    "sdk"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jest": "^27.5.2",
+    "jest": "^27.5.1",
+    "ts-jest": "^27.1.5",
+    "typescript": "^4.5.0"
+  }
 }
