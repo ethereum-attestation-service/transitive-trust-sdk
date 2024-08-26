@@ -34,7 +34,7 @@ describe("TransitiveTrustGraph", () => {
 
   test("addEdge throws error for invalid weight", () => {
     expect(() => graph.addEdge("A", "B", 1.5)).toThrow(
-      "Weight must be a number between 0 and 1"
+      "Weight must be a number between -1 and 1 (exclusive)"
     );
   });
 

@@ -2,7 +2,7 @@ import Graph from "graphology";
 import { PriorityQueue } from "./PriorityQueue";
 
 /**
- * Represents a graph for computing transitive trust scores.
+ * Represents a graph for computing transitive trust scores with distrust.
  */
 export class TransitiveTrustGraph {
   private graph: Graph;
@@ -29,8 +29,8 @@ export class TransitiveTrustGraph {
    * Adds an edge to the graph.
    * @param source The source node.
    * @param target The target node.
-   * @param weight The weight of the edge (between 0 and 1).
-   * @throws {Error} If the source or target is not a non-empty string, or if the weight is not between 0 and 1.
+   * @param weight The weight of the edge (between -1 and 1, non-inclusive).
+   * @throws {Error} If the source or target is not a non-empty string, or if the weight is not between -1 and 1 (exclusive).
    */
   addEdge(source: string, target: string, weight: number): void {
     if (typeof source !== "string" || source.trim() === "") {
@@ -39,8 +39,8 @@ export class TransitiveTrustGraph {
     if (typeof target !== "string" || target.trim() === "") {
       throw new Error("Target must be a non-empty string");
     }
-    if (typeof weight !== "number" || weight < 0 || weight > 1) {
-      throw new Error("Weight must be a number between 0 and 1");
+    if (typeof weight !== "number" || weight <= -1 || weight >= 1) {
+      throw new Error("Weight must be a number between -1 and 1 (exclusive)");
     }
 
     this.addNode(source);
@@ -54,7 +54,7 @@ export class TransitiveTrustGraph {
   }
 
   /**
-   * Computes the trust score between two nodes.
+   * Computes the trust score between two nodes, incorporating distrust.
    * @param source The source node.
    * @param target The target node.
    * @returns The computed trust score.
@@ -68,15 +68,17 @@ export class TransitiveTrustGraph {
       throw new Error(`Target node "${target}" not found in the graph`);
     }
 
-    const scores = new Map<string, number>();
+    const pScores = new Map<string, number>();
+    const nScores = new Map<string, number>();
     const inspected = new Set<string>();
     const pq = new PriorityQueue<string>();
 
     // Initialize scores and priority queue
     this.graph.forEachNode((node) => {
-      const score = node === source ? 1 : 0;
-      scores.set(node, score);
-      pq.insert(node, score);
+      const pScore = node === source ? 1 : 0;
+      pScores.set(node, pScore);
+      nScores.set(node, 0);
+      pq.insert(node, pScore);
     });
 
     while (!pq.isEmpty()) {
@@ -84,7 +86,7 @@ export class TransitiveTrustGraph {
       if (inspected.has(node)) continue;
       inspected.add(node);
 
-      const nodeScore = scores.get(node)!;
+      const nodeScore = Math.max(pScores.get(node)! - nScores.get(node)!, 0);
 
       this.graph.forEachOutNeighbor(node, (neighbor) => {
         if (!inspected.has(neighbor)) {
@@ -93,17 +95,24 @@ export class TransitiveTrustGraph {
             neighbor,
             "weight"
           ) as number;
-          const oldScore = scores.get(neighbor)!;
-          const newScore = oldScore + (nodeScore - oldScore) * weight;
-          if (newScore > oldScore) {
-            scores.set(neighbor, newScore);
-            pq.updatePriority(neighbor, newScore);
+          if (weight > 0 && nodeScore > pScores.get(neighbor)!) {
+            const newPScore =
+              pScores.get(neighbor)! +
+              (nodeScore - pScores.get(neighbor)!) * weight;
+            pScores.set(neighbor, newPScore);
+            pq.updatePriority(neighbor, newPScore - nScores.get(neighbor)!);
+          } else if (weight < 0 && nodeScore > nScores.get(neighbor)!) {
+            const newNScore =
+              nScores.get(neighbor)! -
+              (nodeScore - nScores.get(neighbor)!) * weight;
+            nScores.set(neighbor, newNScore);
+            pq.updatePriority(neighbor, pScores.get(neighbor)! - newNScore);
           }
         }
       });
     }
 
-    return Math.max(scores.get(target) || 0, 0);
+    return Math.max(pScores.get(target)! - nScores.get(target)!, 0);
   }
 
   /**
