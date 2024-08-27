@@ -1,6 +1,6 @@
 {
   "name": "@ethereum-attestation-service/transitive-trust-sdk",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "A TypeScript SDK for computing transitive trust scores in a graph",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -25,5 +25,13 @@
   },
   "dependencies": {
     "graphology": "^0.25.4"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ethereum-attestation-service/transitive-trust-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ethereum-attestation-service/transitive-trust-sdk/issues"
+  },
+  "homepage": "https://github.com/ethereum-attestation-service/transitive-trust-sdk#readme"
 }
