@@ -2,7 +2,7 @@ import Graph from "graphology";
 import { PriorityQueue } from "./PriorityQueue";
 
 /**
- * Represents a graph for computing transitive trust scores.
+ * Represents a graph for computing transitive trust scores with separate positive and negative weights.
  */
 export class TransitiveTrustGraph {
   private graph: Graph;
@@ -29,38 +29,73 @@ export class TransitiveTrustGraph {
    * Adds an edge to the graph.
    * @param source The source node.
    * @param target The target node.
-   * @param weight The weight of the edge (between 0 and 1).
-   * @throws {Error} If the source or target is not a non-empty string, or if the weight is not between 0 and 1.
+   * @param positiveWeight The positive weight of the edge (between 0 and 1, inclusive).
+   * @param negativeWeight The negative weight of the edge (between 0 and 1, inclusive).
+   * @throws {Error} If the source or target is not a non-empty string, or if the weights are not between 0 and 1 (inclusive).
    */
-  addEdge(source: string, target: string, weight: number): void {
+  addEdge(
+    source: string,
+    target: string,
+    positiveWeight: number,
+    negativeWeight: number
+  ): void {
     if (typeof source !== "string" || source.trim() === "") {
       throw new Error("Source must be a non-empty string");
     }
     if (typeof target !== "string" || target.trim() === "") {
       throw new Error("Target must be a non-empty string");
     }
-    if (typeof weight !== "number" || weight < 0 || weight > 1) {
-      throw new Error("Weight must be a number between 0 and 1");
+    if (
+      typeof positiveWeight !== "number" ||
+      positiveWeight < 0 ||
+      positiveWeight > 1
+    ) {
+      throw new Error(
+        "Positive weight must be a number between 0 and 1 (inclusive)"
+      );
+    }
+    if (
+      typeof negativeWeight !== "number" ||
+      negativeWeight < 0 ||
+      negativeWeight > 1
+    ) {
+      throw new Error(
+        "Negative weight must be a number between 0 and 1 (inclusive)"
+      );
     }
 
     this.addNode(source);
     this.addNode(target);
 
     if (this.graph.hasEdge(source, target)) {
-      this.graph.setEdgeAttribute(source, target, "weight", weight);
+      this.graph.setEdgeAttribute(
+        source,
+        target,
+        "positiveWeight",
+        positiveWeight
+      );
+      this.graph.setEdgeAttribute(
+        source,
+        target,
+        "negativeWeight",
+        negativeWeight
+      );
     } else {
-      this.graph.addEdge(source, target, { weight });
+      this.graph.addEdge(source, target, { positiveWeight, negativeWeight });
     }
   }
 
   /**
-   * Computes the trust score between two nodes.
+   * Computes the trust scores between two nodes, showing both positive and negative components.
    * @param source The source node.
    * @param target The target node.
-   * @returns The computed trust score.
+   * @returns An object containing the positive score, negative score, and net score.
    * @throws {Error} If the source or target node is not found in the graph.
    */
-  computeTrustScore(source: string, target: string): number {
+  computeTrustScores(
+    source: string,
+    target: string
+  ): { positiveScore: number; negativeScore: number; netScore: number } {
     if (!this.graph.hasNode(source)) {
       throw new Error(`Source node "${source}" not found in the graph`);
     }
@@ -68,15 +103,17 @@ export class TransitiveTrustGraph {
       throw new Error(`Target node "${target}" not found in the graph`);
     }
 
-    const scores = new Map<string, number>();
+    const pScores = new Map<string, number>();
+    const nScores = new Map<string, number>();
     const inspected = new Set<string>();
     const pq = new PriorityQueue<string>();
 
     // Initialize scores and priority queue
     this.graph.forEachNode((node) => {
-      const score = node === source ? 1 : 0;
-      scores.set(node, score);
-      pq.insert(node, score);
+      const pScore = node === source ? 1 : 0;
+      pScores.set(node, pScore);
+      nScores.set(node, 0);
+      pq.insert(node, pScore);
     });
 
     while (!pq.isEmpty()) {
@@ -84,26 +121,52 @@ export class TransitiveTrustGraph {
       if (inspected.has(node)) continue;
       inspected.add(node);
 
-      const nodeScore = scores.get(node)!;
+      const nodeScore = Math.max(pScores.get(node)! - nScores.get(node)!, 0);
 
       this.graph.forEachOutNeighbor(node, (neighbor) => {
         if (!inspected.has(neighbor)) {
-          const weight = this.graph.getEdgeAttribute(
+          const positiveWeight = this.graph.getEdgeAttribute(
             node,
             neighbor,
-            "weight"
+            "positiveWeight"
           ) as number;
-          const oldScore = scores.get(neighbor)!;
-          const newScore = oldScore + (nodeScore - oldScore) * weight;
-          if (newScore > oldScore) {
-            scores.set(neighbor, newScore);
-            pq.updatePriority(neighbor, newScore);
+          const negativeWeight = this.graph.getEdgeAttribute(
+            node,
+            neighbor,
+            "negativeWeight"
+          ) as number;
+
+          if (nodeScore > pScores.get(neighbor)!) {
+            const newPScore =
+              pScores.get(neighbor)! +
+              (nodeScore - pScores.get(neighbor)!) * positiveWeight;
+            pScores.set(neighbor, newPScore);
           }
+
+          if (nodeScore > nScores.get(neighbor)!) {
+            const newNScore =
+              nScores.get(neighbor)! +
+              (nodeScore - nScores.get(neighbor)!) * negativeWeight;
+            nScores.set(neighbor, newNScore);
+          }
+
+          pq.updatePriority(
+            neighbor,
+            pScores.get(neighbor)! - nScores.get(neighbor)!
+          );
         }
       });
     }
 
-    return Math.max(scores.get(target) || 0, 0);
+    const positiveScore = pScores.get(target)!;
+    const negativeScore = nScores.get(target)!;
+    const netScore = positiveScore - negativeScore;
+
+    return {
+      positiveScore,
+      negativeScore,
+      netScore,
+    };
   }
 
   /**
@@ -118,11 +181,23 @@ export class TransitiveTrustGraph {
    * Returns all edges in the graph.
    * @returns An array of objects representing edges.
    */
-  getEdges(): { source: string; target: string; weight: number }[] {
+  getEdges(): {
+    source: string;
+    target: string;
+    positiveWeight: number;
+    negativeWeight: number;
+  }[] {
     return this.graph.edges().map((edge) => {
       const [source, target] = this.graph.extremities(edge);
-      const weight = this.graph.getEdgeAttribute(edge, "weight") as number;
-      return { source, target, weight };
+      const positiveWeight = this.graph.getEdgeAttribute(
+        edge,
+        "positiveWeight"
+      ) as number;
+      const negativeWeight = this.graph.getEdgeAttribute(
+        edge,
+        "negativeWeight"
+      ) as number;
+      return { source, target, positiveWeight, negativeWeight };
     });
   }
 }
