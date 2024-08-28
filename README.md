@@ -5,7 +5,7 @@ This project implements a Transitive Trust Graph system in TypeScript, allowing 
 ## Features
 
 - Create a directed graph with nodes and weighted edges
-- Compute trust scores between any two nodes in the graph
+- Compute trust scores between nodes in the graph
 - Handle both positive and negative trust weights
 - Efficient implementation using a priority queue for score propagation
 
@@ -33,9 +33,9 @@ graph.addEdge("C", "D", 0.5, 0.3);
 graph.addEdge("A", "C", 0.5, 0.1);
 
 // Compute trust scores
-const scores = graph.computeTrustScores("A", "D");
+const scores = graph.computeTrustScores("A", ["D"]);
 console.log(scores);
-// Output: { positiveScore: 0.2, negativeScore: 0.12, netScore: 0.08 }
+// Output: { D: { positiveScore: 0.2, negativeScore: 0.12, netScore: 0.08 } }
 ```
 
 ## API Reference
@@ -50,9 +50,9 @@ Adds a node to the graph.
 
 Adds an edge to the graph with separate positive and negative weights.
 
-#### `computeTrustScores(source: string, target: string): { positiveScore: number; negativeScore: number; netScore: number }`
+#### `computeTrustScores(source: string, targets?: string[]): { [target: string]: { positiveScore: number; negativeScore: number; netScore: number } }`
 
-Computes the trust scores between two nodes, showing both positive and negative components.
+Computes the trust scores between a source node and specified target nodes (or all nodes if no targets are specified), showing both positive and negative components.
 
 #### `getNodes(): string[]`
 

@@ -86,21 +86,19 @@ export class TransitiveTrustGraph {
   }
 
   /**
-   * Computes the trust scores between two nodes, showing both positive and negative components.
+   * Computes the trust scores from a source node to all other nodes.
    * @param source The source node.
-   * @param target The target node.
-   * @returns An object containing the positive score, negative score, and net score.
-   * @throws {Error} If the source or target node is not found in the graph.
+   * @returns A Map containing the trust scores for all nodes.
+   * @throws {Error} If the source node is not found in the graph.
    */
-  computeTrustScores(
-    source: string,
-    target: string
-  ): { positiveScore: number; negativeScore: number; netScore: number } {
+  private computeScores(
+    source: string
+  ): Map<
+    string,
+    { positiveScore: number; negativeScore: number; netScore: number }
+  > {
     if (!this.graph.hasNode(source)) {
       throw new Error(`Source node "${source}" not found in the graph`);
-    }
-    if (!this.graph.hasNode(target)) {
-      throw new Error(`Target node "${target}" not found in the graph`);
     }
 
     const pScores = new Map<string, number>();
@@ -158,15 +156,69 @@ export class TransitiveTrustGraph {
       });
     }
 
-    const positiveScore = pScores.get(target)!;
-    const negativeScore = nScores.get(target)!;
-    const netScore = positiveScore - negativeScore;
+    const results = new Map<
+      string,
+      { positiveScore: number; negativeScore: number; netScore: number }
+    >();
+    this.graph.forEachNode((node) => {
+      if (node !== source) {
+        const positiveScore = pScores.get(node)!;
+        const negativeScore = nScores.get(node)!;
+        const netScore = positiveScore - negativeScore;
+        results.set(node, { positiveScore, negativeScore, netScore });
+      }
+    });
 
-    return {
-      positiveScore,
-      negativeScore,
-      netScore,
+    return results;
+  }
+
+  /**
+   * Computes the trust scores between a source node and specific target nodes.
+   * @param source The source node.
+   * @param targets An array of target nodes. If empty, computes for all nodes.
+   * @returns An object containing the trust scores for the specified target nodes or all nodes.
+   * @throws {Error} If the source or any target node is not found in the graph.
+   */
+  computeTrustScores(
+    source: string,
+    targets: string[] = []
+  ): {
+    [target: string]: {
+      positiveScore: number;
+      negativeScore: number;
+      netScore: number;
     };
+  } {
+    const allScores = this.computeScores(source);
+    const results: {
+      [target: string]: {
+        positiveScore: number;
+        negativeScore: number;
+        netScore: number;
+      };
+    } = {};
+
+    if (targets.length === 0) {
+      // If no specific targets, return scores for all nodes
+      allScores.forEach((score, node) => {
+        if (node !== source) {
+          results[node] = score;
+        }
+      });
+    } else {
+      // Return scores only for specified targets
+      targets.forEach((target) => {
+        if (!this.graph.hasNode(target)) {
+          throw new Error(`Target node "${target}" not found in the graph`);
+        }
+        const score = allScores.get(target);
+        if (score) {
+          results[target] = score;
+        }
+      });
+    }
+
+    return results;
   }
 
   /**

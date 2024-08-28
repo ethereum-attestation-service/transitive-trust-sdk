@@ -23,15 +23,28 @@ describe("TransitiveTrustGraph", () => {
     });
   });
 
-  test("computeTrustScore calculates correct trust score", () => {
+  test("computeTrustScores calculates correct trust scores for specific targets", () => {
     graph.addEdge("A", "B", 0.6, 0);
     graph.addEdge("B", "C", 0.4, 0);
     graph.addEdge("C", "D", 0.5, 0);
     graph.addEdge("A", "C", 0.5, 0);
 
-    const score = graph.computeTrustScores("A", "D");
-    expect(score.positiveScore).toBe(0.27);
-    expect(score.negativeScore).toBe(0);
+    const scores = graph.computeTrustScores("A", ["D"]);
+    expect(scores["D"].positiveScore).toBeCloseTo(0.27, 2);
+    expect(scores["D"].negativeScore).toBe(0);
+    expect(scores["D"].netScore).toBeCloseTo(0.27, 2);
+  });
+
+  test("computeTrustScores calculates correct trust scores for all nodes", () => {
+    graph.addEdge("A", "B", 0.6, 0);
+    graph.addEdge("B", "C", 0.4, 0);
+    graph.addEdge("C", "D", 0.5, 0);
+    graph.addEdge("A", "C", 0.5, 0);
+
+    const scores = graph.computeTrustScores("A");
+    expect(scores["B"].positiveScore).toBe(0.6);
+    expect(scores["C"].positiveScore).toBeCloseTo(0.54, 2);
+    expect(scores["D"].positiveScore).toBeCloseTo(0.27, 2);
   });
 
   test("addNode throws error for invalid input", () => {
@@ -47,21 +60,28 @@ describe("TransitiveTrustGraph", () => {
     );
   });
 
-  test("computeTrustScore throws error for non-existent nodes", () => {
-    expect(() => graph.computeTrustScores("X", "Y")).toThrow(
+  test("computeTrustScores throws error for non-existent source node", () => {
+    expect(() => graph.computeTrustScores("X")).toThrow(
       'Source node "X" not found in the graph'
     );
   });
 
-  test("computeTrustScore calculates correct trust score with negative weights", () => {
+  test("computeTrustScores throws error for non-existent target node", () => {
+    graph.addNode("A");
+    expect(() => graph.computeTrustScores("A", ["Y"])).toThrow(
+      'Target node "Y" not found in the graph'
+    );
+  });
+
+  test("computeTrustScores calculates correct trust scores with negative weights", () => {
     graph.addEdge("A", "B", 0.6, 0.2);
     graph.addEdge("B", "C", 0.4, 0.1);
     graph.addEdge("C", "D", 0.5, 0.3);
     graph.addEdge("A", "C", 0.5, 0.1);
 
-    const score = graph.computeTrustScores("A", "D");
-    expect(score.positiveScore).toBe(0.2);
-    expect(score.negativeScore).toBe(0.12);
-    expect(score.netScore).toBeCloseTo(0.08, 2);
+    const scores = graph.computeTrustScores("A", ["D"]);
+    expect(scores["D"].positiveScore).toBeCloseTo(0.2, 2);
+    expect(scores["D"].negativeScore).toBeCloseTo(0.12, 2);
+    expect(scores["D"].netScore).toBeCloseTo(0.08, 2);
   });
 });
