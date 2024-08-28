@@ -32,35 +32,80 @@ graph.addEdge("B", "C", 0.4, 0.1);
 graph.addEdge("C", "D", 0.5, 0.3);
 graph.addEdge("A", "C", 0.5, 0.1);
 
-// Compute trust scores
+// Compute trust scores from node A to node D
 const scores = graph.computeTrustScores("A", ["D"]);
 console.log(scores);
 // Output: { D: { positiveScore: 0.2, negativeScore: 0.12, netScore: 0.08 } }
 ```
 
+# Transitive Trust Graph
+
+[The rest of the README remains the same up to the API Reference section]
+
 ## API Reference
 
 ### `TransitiveTrustGraph`
+
+The `TransitiveTrustGraph` class provides the following methods:
 
 #### `addNode(node: string): void`
 
 Adds a node to the graph.
 
+- **Parameters:**
+  - `node: string` - The node to add.
+- **Throws:**
+  - `Error` if the node is not a non-empty string.
+
+---
+
 #### `addEdge(source: string, target: string, positiveWeight: number, negativeWeight: number): void`
 
 Adds an edge to the graph with separate positive and negative weights.
 
+- **Parameters:**
+  - `source: string` - The source node.
+  - `target: string` - The target node.
+  - `positiveWeight: number` - The positive weight of the edge (between 0 and 1, inclusive).
+  - `negativeWeight: number` - The negative weight of the edge (between 0 and 1, inclusive).
+- **Throws:**
+  - `Error` if the source or target is not a non-empty string, or if the weights are not between 0 and 1 (inclusive).
+
+---
+
 #### `computeTrustScores(source: string, targets?: string[]): { [target: string]: { positiveScore: number; negativeScore: number; netScore: number } }`
 
-Computes the trust scores between a source node and specified target nodes (or all nodes if no targets are specified), showing both positive and negative components.
+Computes the trust scores between a source node and specified target nodes (or all nodes if no targets are specified).
+
+- **Parameters:**
+  - `source: string` - The source node.
+  - `targets?: string[]` - Optional array of target nodes. If empty, computes for all nodes.
+- **Returns:**
+  - An object containing the trust scores for the specified target nodes or all nodes.
+- **Throws:**
+  - `Error` if the source or any target node is not found in the graph.
+
+---
 
 #### `getNodes(): string[]`
 
 Returns all nodes in the graph.
 
+- **Returns:**
+  - An array of all nodes.
+
+---
+
 #### `getEdges(): { source: string; target: string; positiveWeight: number; negativeWeight: number }[]`
 
 Returns all edges in the graph.
+
+- **Returns:**
+  - An array of objects representing edges, each containing:
+    - `source: string` - The source node of the edge.
+    - `target: string` - The target node of the edge.
+    - `positiveWeight: number` - The positive weight of the edge.
+    - `negativeWeight: number` - The negative weight of the edge.
 
 ## Development
 
