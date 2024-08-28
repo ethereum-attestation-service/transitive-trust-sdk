@@ -19,7 +19,9 @@ npm install @ethereum-attestation-service/transitive-trust-sdk
 
 ## Usage
 
-Here's a basic example of how to use the `TransitiveTrustGraph` class:
+Here are examples of how to use the `TransitiveTrustGraph` class:
+
+### Example 1: Computing trust scores for specific targets
 
 ```typescript
 import { TransitiveTrustGraph } from "@ethereum-attestation-service/transitive-trust-sdk";
@@ -32,15 +34,51 @@ graph.addEdge("B", "C", 0.4, 0.1);
 graph.addEdge("C", "D", 0.5, 0.3);
 graph.addEdge("A", "C", 0.5, 0.1);
 
-// Compute trust scores from node A to node D
+// Compute trust scores for specific targets
 const scores = graph.computeTrustScores("A", ["D"]);
 console.log(scores);
 // Output: { D: { positiveScore: 0.2, negativeScore: 0.12, netScore: 0.08 } }
 ```
 
-# Transitive Trust Graph
+### Example 2: Computing trust scores for the entire graph
 
-[The rest of the README remains the same up to the API Reference section]
+```typescript
+import { TransitiveTrustGraph } from "@ethereum-attestation-service/transitive-trust-sdk";
+
+const graph = new TransitiveTrustGraph();
+
+// Add edges to the graph
+graph.addEdge("A", "B", 0.8, 0.1);
+graph.addEdge("B", "C", 0.6, 0.2);
+graph.addEdge("C", "D", 0.7, 0.3);
+graph.addEdge("A", "C", 0.5, 0.1);
+graph.addEdge("B", "D", 0.4, 0.1);
+
+// Compute trust scores for the entire graph from node "A"
+const allScores = graph.computeTrustScores("A");
+console.log(allScores);
+// Output:
+// {
+//   B: { positiveScore: 0.8, negativeScore: 0.1, netScore: 0.7 },
+//   C: { positiveScore: 0.74, negativeScore: 0.17, netScore: 0.57 },
+//   D: { positiveScore: 0.518, negativeScore: 0.219, netScore: 0.299 }
+// }
+
+// You can also get all nodes and edges in the graph
+const nodes = graph.getNodes();
+console.log("Nodes:", nodes);
+// Output: Nodes: ["A", "B", "C", "D"]
+
+const edges = graph.getEdges();
+console.log("Edges:", edges);
+// Output: Edges: [
+//   { source: "A", target: "B", positiveWeight: 0.8, negativeWeight: 0.1 },
+//   { source: "B", target: "C", positiveWeight: 0.6, negativeWeight: 0.2 },
+//   { source: "C", target: "D", positiveWeight: 0.7, negativeWeight: 0.3 },
+//   { source: "A", target: "C", positiveWeight: 0.5, negativeWeight: 0.1 },
+//   { source: "B", target: "D", positiveWeight: 0.4, negativeWeight: 0.1 }
+// ]
+```
 
 ## API Reference
 
