@@ -1,14 +1,14 @@
 import Graph from "graphology";
-import {PriorityQueue} from "./PriorityQueue";
+import { PriorityQueue } from "./PriorityQueue";
 
 /**
  * Represents a graph for computing transitive trust scores with separate positive and negative weights.
  */
 export class TransitiveTrustGraph {
-  private graph: Graph;
+  public graph: Graph;
 
   constructor() {
-    this.graph = new Graph({type: "directed", multi: false});
+    this.graph = new Graph({ type: "directed", multi: false });
   }
 
   /**
@@ -81,7 +81,7 @@ export class TransitiveTrustGraph {
         negativeWeight
       );
     } else {
-      this.graph.addEdge(source, target, {positiveWeight, negativeWeight});
+      this.graph.addEdge(source, target, { positiveWeight, negativeWeight });
     }
   }
 
@@ -122,7 +122,10 @@ export class TransitiveTrustGraph {
       const nodeScore = Math.max(pScores.get(node)! - nScores.get(node)!, 0);
 
       this.graph.forEachOutNeighbor(node, (neighbor) => {
-        if (!inspected.has(neighbor) && pScores.get(neighbor)! - nScores.get(neighbor)! < nodeScore) {
+        if (
+          !inspected.has(neighbor) &&
+          pScores.get(neighbor)! - nScores.get(neighbor)! < nodeScore
+        ) {
           const positiveWeight = this.graph.getEdgeAttribute(
             node,
             neighbor,
@@ -165,7 +168,7 @@ export class TransitiveTrustGraph {
         const positiveScore = pScores.get(node)!;
         const negativeScore = nScores.get(node)!;
         const netScore = positiveScore - negativeScore;
-        results.set(node, {positiveScore, negativeScore, netScore});
+        results.set(node, { positiveScore, negativeScore, netScore });
       }
     });
 
@@ -249,7 +252,7 @@ export class TransitiveTrustGraph {
         edge,
         "negativeWeight"
       ) as number;
-      return {source, target, positiveWeight, negativeWeight};
+      return { source, target, positiveWeight, negativeWeight };
     });
   }
 }
