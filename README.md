@@ -84,7 +84,13 @@ console.log("Edges:", edges);
 
 ### `TransitiveTrustGraph`
 
-The `TransitiveTrustGraph` class provides the following methods:
+The `TransitiveTrustGraph` class provides the following properties and methods:
+
+#### Properties
+
+- `graph: Graph` - A public property representing the underlying graph structure. It's an instance of the `Graph` class from the `graphology` library.
+
+#### Methods
 
 #### `addNode(node: string): void`
 
