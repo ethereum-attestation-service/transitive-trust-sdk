@@ -6,6 +6,7 @@ This project implements a Transitive Trust Graph system in TypeScript, allowing 
 
 - Create a directed graph with nodes and weighted edges
 - Compute trust scores between nodes in the graph
+- Find trust paths between nodes with configurable constraints
 - Handle both positive and negative trust weights
 - Efficient implementation using a priority queue for score propagation
 
@@ -80,6 +81,63 @@ console.log("Edges:", edges);
 // ]
 ```
 
+### Example 3: Finding trust paths between nodes
+
+```typescript
+import { TransitiveTrustGraph } from "@ethereum-attestation-service/transitive-trust-sdk";
+
+const graph = new TransitiveTrustGraph();
+
+// Build a trust network
+graph.addEdge("Alice", "Bob", 0.9, 0.1);
+graph.addEdge("Alice", "Charlie", 0.7, 0.2);
+graph.addEdge("Bob", "David", 0.8, 0.1);
+graph.addEdge("Charlie", "David", 0.6, 0.3);
+graph.addEdge("Bob", "Eve", 0.7, 0.2);
+graph.addEdge("Eve", "Frank", 0.9, 0.05);
+graph.addEdge("David", "Frank", 0.8, 0.1);
+
+// Find trust paths from Alice to Frank with minimum trust score of 0.2
+const paths = graph.findTrustPaths("Alice", "Frank", {
+  maxPaths: 5,      // Return up to 5 paths
+  maxHops: 4,       // Maximum path length of 4
+  minTrustScore: 0.2 // Only paths with net trust >= 0.2
+});
+
+console.log(`Found ${paths.length} paths from Alice to Frank:`);
+paths.forEach((path, i) => {
+  console.log(`\nPath ${i + 1}:`);
+  console.log(`  Route: ${path.path.join(" → ")}`);
+  console.log(`  Trust Score: ${path.totalNetScore.toFixed(3)}`);
+  console.log(`  Steps:`);
+  path.steps.forEach(step => {
+    console.log(`    ${step.from} → ${step.to}: +${step.positiveWeight} / -${step.negativeWeight}`);
+  });
+});
+
+// Output:
+// Found 2 paths from Alice to Frank:
+// 
+// Path 1:
+//   Route: Alice → Bob → David → Frank
+//   Trust Score: 0.342
+//   Steps:
+//     Alice → Bob: +0.9 / -0.1
+//     Bob → David: +0.8 / -0.1
+//     David → Frank: +0.8 / -0.1
+// 
+// Path 2:
+//   Route: Alice → Bob → Eve → Frank
+//   Trust Score: 0.289
+//   Steps:
+//     Alice → Bob: +0.9 / -0.1
+//     Bob → Eve: +0.7 / -0.2
+//     Eve → Frank: +0.9 / -0.05
+
+// Note: The path through Charlie (Alice → Charlie → David → Frank) 
+// has a negative trust score (-0.021) and is filtered out by minTrustScore
+```
+
 ## API Reference
 
 ### `TransitiveTrustGraph`
@@ -150,6 +208,79 @@ Returns all edges in the graph.
     - `target: string` - The target node of the edge.
     - `positiveWeight: number` - The positive weight of the edge.
     - `negativeWeight: number` - The negative weight of the edge.
+
+---
+
+#### `findTrustPaths(source: string, target: string, options?: FindTrustPathsOptions): TrustPath[]`
+
+Finds trust paths between a source and target node.
+
+- **Parameters:**
+  - `source: string` - The source node.
+  - `target: string` - The target node.
+  - `options?: FindTrustPathsOptions` - Optional configuration:
+    - `maxPaths?: number` - Maximum number of paths to return (default: 10).
+    - `maxHops?: number` - Maximum path length (default: 6).
+    - `minTrustScore?: number` - Minimum trust score threshold (default: 0).
+- **Returns:**
+  - An array of `TrustPath` objects sorted by net score (highest first), where each path contains:
+    - `source: string` - The source node.
+    - `target: string` - The target node.
+    - `path: string[]` - Array of nodes in the path from source to target.
+    - `steps: TrustPathStep[]` - Detailed information about each step.
+    - `totalPositiveScore: number` - Final positive trust score.
+    - `totalNegativeScore: number` - Final negative trust score.
+    - `totalNetScore: number` - Final net trust score (positive - negative).
+    - `length: number` - Number of edges in the path.
+- **Throws:**
+  - `Error` if the source or target node is not found in the graph.
+
+### Type Definitions
+
+#### `TrustPathStep`
+
+Represents a single step in a trust path:
+
+```typescript
+interface TrustPathStep {
+  from: string;
+  to: string;
+  positiveWeight: number;
+  negativeWeight: number;
+  cumulativePositiveScore: number;
+  cumulativeNegativeScore: number;
+  cumulativeNetScore: number;
+}
+```
+
+#### `TrustPath`
+
+Represents a complete trust path from source to target:
+
+```typescript
+interface TrustPath {
+  source: string;
+  target: string;
+  path: string[];
+  steps: TrustPathStep[];
+  totalPositiveScore: number;
+  totalNegativeScore: number;
+  totalNetScore: number;
+  length: number;
+}
+```
+
+#### `FindTrustPathsOptions`
+
+Options for finding trust paths:
+
+```typescript
+interface FindTrustPathsOptions {
+  maxPaths?: number;      // Maximum number of paths to return (default: 10)
+  maxHops?: number;       // Maximum path length (default: 6)
+  minTrustScore?: number; // Minimum trust score threshold (default: 0)
+}
+```
 
 ## Development
 

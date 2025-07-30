@@ -1,1 +1,6 @@
-export { TransitiveTrustGraph } from "./TransitiveTrustGraph";
+export { 
+  TransitiveTrustGraph,
+  TrustPath,
+  TrustPathStep,
+  FindTrustPathsOptions
+} from "./TransitiveTrustGraph";

@@ -2,6 +2,42 @@ import Graph from "graphology";
 import { PriorityQueue } from "./PriorityQueue";
 
 /**
+ * Represents a single step in a trust path.
+ */
+export interface TrustPathStep {
+  from: string;
+  to: string;
+  positiveWeight: number;
+  negativeWeight: number;
+  cumulativePositiveScore: number;
+  cumulativeNegativeScore: number;
+  cumulativeNetScore: number;
+}
+
+/**
+ * Represents a complete trust path from source to target.
+ */
+export interface TrustPath {
+  source: string;
+  target: string;
+  path: string[];
+  steps: TrustPathStep[];
+  totalPositiveScore: number;
+  totalNegativeScore: number;
+  totalNetScore: number;
+  length: number;
+}
+
+/**
+ * Options for finding trust paths.
+ */
+export interface FindTrustPathsOptions {
+  maxPaths?: number;
+  maxHops?: number;
+  minTrustScore?: number;
+}
+
+/**
  * Represents a graph for computing transitive trust scores with separate positive and negative weights.
  */
 export class TransitiveTrustGraph {
@@ -254,5 +290,126 @@ export class TransitiveTrustGraph {
       ) as number;
       return { source, target, positiveWeight, negativeWeight };
     });
+  }
+
+  /**
+   * Finds trust paths between a source and target node.
+   * @param source The source node.
+   * @param target The target node.
+   * @param options Options for finding paths.
+   * @returns An array of trust paths sorted by net score (highest first).
+   * @throws {Error} If the source or target node is not found in the graph.
+   */
+  findTrustPaths(
+    source: string,
+    target: string,
+    options: FindTrustPathsOptions = {}
+  ): TrustPath[] {
+    if (!this.graph.hasNode(source)) {
+      throw new Error(`Source node "${source}" not found in the graph`);
+    }
+    if (!this.graph.hasNode(target)) {
+      throw new Error(`Target node "${target}" not found in the graph`);
+    }
+    if (source === target) {
+      return [];
+    }
+
+    const {
+      maxPaths = 10,
+      maxHops = 6,
+      minTrustScore = 0
+    } = options;
+
+    const paths: TrustPath[] = [];
+    
+    // DFS to find all paths
+    const visited = new Set<string>();
+    const currentPath: string[] = [source];
+    const currentSteps: TrustPathStep[] = [];
+    let currentPositiveScore = 1;
+    let currentNegativeScore = 0;
+
+    const dfs = (node: string, depth: number) => {
+      if (depth > maxHops) return;
+      
+      if (node === target) {
+        const netScore = currentPositiveScore - currentNegativeScore;
+        if (netScore >= minTrustScore) {
+          paths.push({
+            source,
+            target,
+            path: [...currentPath],
+            steps: [...currentSteps],
+            totalPositiveScore: currentPositiveScore,
+            totalNegativeScore: currentNegativeScore,
+            totalNetScore: netScore,
+            length: currentPath.length - 1
+          });
+        }
+        return;
+      }
+
+      visited.add(node);
+
+      this.graph.forEachOutNeighbor(node, (neighbor) => {
+        if (!visited.has(neighbor)) {
+          const positiveWeight = this.graph.getEdgeAttribute(
+            node,
+            neighbor,
+            "positiveWeight"
+          ) as number;
+          const negativeWeight = this.graph.getEdgeAttribute(
+            node,
+            neighbor,
+            "negativeWeight"
+          ) as number;
+
+          // Calculate new scores using the trust propagation formula
+          const prevPositiveScore = currentPositiveScore;
+          const prevNegativeScore = currentNegativeScore;
+          const prevNetScore = Math.max(prevPositiveScore - prevNegativeScore, 0);
+          
+          // Only propagate if current net score is positive
+          if (prevNetScore > 0) {
+            currentPositiveScore = prevPositiveScore * positiveWeight;
+            currentNegativeScore = prevNegativeScore + prevNetScore * negativeWeight;
+            
+            const newNetScore = currentPositiveScore - currentNegativeScore;
+            
+            // Only continue if path still meets minimum trust requirement
+            if (newNetScore >= minTrustScore || neighbor === target) {
+              currentPath.push(neighbor);
+              currentSteps.push({
+                from: node,
+                to: neighbor,
+                positiveWeight,
+                negativeWeight,
+                cumulativePositiveScore: currentPositiveScore,
+                cumulativeNegativeScore: currentNegativeScore,
+                cumulativeNetScore: newNetScore
+              });
+
+              dfs(neighbor, depth + 1);
+
+              currentPath.pop();
+              currentSteps.pop();
+            }
+            
+            // Restore previous scores
+            currentPositiveScore = prevPositiveScore;
+            currentNegativeScore = prevNegativeScore;
+          }
+        }
+      });
+
+      visited.delete(node);
+    };
+
+    dfs(source, 0);
+
+    // Sort paths by net score (highest first) and return top N
+    paths.sort((a, b) => b.totalNetScore - a.totalNetScore);
+    return paths.slice(0, maxPaths);
   }
 }
