@@ -49,6 +49,22 @@ describe("TransitiveTrustGraph", () => {
 
   test("addNode throws error for invalid input", () => {
     expect(() => graph.addNode("")).toThrow("Node must be a non-empty string");
+    expect(() => graph.addNode("   ")).toThrow("Node must be a non-empty string");
+  });
+
+  test("addEdge throws error for invalid nodes", () => {
+    expect(() => graph.addEdge("", "B", 0.5, 0.5)).toThrow(
+      "Source must be a non-empty string"
+    );
+    expect(() => graph.addEdge("   ", "B", 0.5, 0.5)).toThrow(
+      "Source must be a non-empty string"
+    );
+    expect(() => graph.addEdge("A", "", 0.5, 0.5)).toThrow(
+      "Target must be a non-empty string"
+    );
+    expect(() => graph.addEdge("A", "   ", 0.5, 0.5)).toThrow(
+      "Target must be a non-empty string"
+    );
   });
 
   test("addEdge throws error for invalid weights", () => {
@@ -83,5 +99,34 @@ describe("TransitiveTrustGraph", () => {
     expect(scores["D"].positiveScore).toBeCloseTo(0.2, 2);
     expect(scores["D"].negativeScore).toBeCloseTo(0.12, 2);
     expect(scores["D"].netScore).toBeCloseTo(0.08, 2);
+  });
+
+  test("addEdge updates existing edge weights", () => {
+    graph.addEdge("A", "B", 0.5, 0.1);
+    let edges = graph.getEdges();
+    expect(edges).toContainEqual({
+      source: "A",
+      target: "B",
+      positiveWeight: 0.5,
+      negativeWeight: 0.1,
+    });
+
+    // Update the edge with new weights
+    graph.addEdge("A", "B", 0.8, 0.3);
+    edges = graph.getEdges();
+    expect(edges).toHaveLength(1);
+    expect(edges).toContainEqual({
+      source: "A",
+      target: "B",
+      positiveWeight: 0.8,
+      negativeWeight: 0.3,
+    });
+  });
+
+  test("addNode does not duplicate existing nodes", () => {
+    graph.addNode("A");
+    graph.addNode("A"); // Try to add the same node again
+    expect(graph.getNodes()).toHaveLength(1);
+    expect(graph.getNodes()).toContain("A");
   });
 });
