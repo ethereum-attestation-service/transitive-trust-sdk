@@ -34,7 +34,8 @@ export interface TrustPath {
 export interface FindTrustPathsOptions {
   maxPaths?: number;
   maxHops?: number;
-  minTrustScore?: number;
+  minFinalTrust?: number;
+  minIntermediateTrust?: number;
 }
 
 /**
@@ -297,6 +298,10 @@ export class TransitiveTrustGraph {
    * @param source The source node.
    * @param target The target node.
    * @param options Options for finding paths.
+   * @param options.maxPaths Maximum number of paths to return (default: 10).
+   * @param options.maxHops Maximum path length (default: 6).
+   * @param options.minFinalTrust Minimum trust score required at the target node (default: 0).
+   * @param options.minIntermediateTrust Minimum trust score required at each intermediate node (default: 0).
    * @returns An array of trust paths sorted by net score (highest first).
    * @throws {Error} If the source or target node is not found in the graph.
    */
@@ -318,7 +323,8 @@ export class TransitiveTrustGraph {
     const {
       maxPaths = 10,
       maxHops = 6,
-      minTrustScore = 0
+      minFinalTrust = 0,
+      minIntermediateTrust = 0
     } = options;
 
     const paths: TrustPath[] = [];
@@ -335,7 +341,7 @@ export class TransitiveTrustGraph {
       
       if (node === target) {
         const netScore = currentPositiveScore - currentNegativeScore;
-        if (netScore >= minTrustScore) {
+        if (netScore >= minFinalTrust) {
           paths.push({
             source,
             target,
@@ -378,7 +384,12 @@ export class TransitiveTrustGraph {
             const newNetScore = currentPositiveScore - currentNegativeScore;
             
             // Only continue if path still meets minimum trust requirement
-            if (newNetScore >= minTrustScore || neighbor === target) {
+            // For intermediate nodes, always check minIntermediateTrust
+            // For target node, check both minIntermediateTrust and minFinalTrust
+            const meetsIntermediateRequirement = newNetScore >= minIntermediateTrust;
+            const meetsFinalRequirement = neighbor !== target || newNetScore >= minFinalTrust;
+            
+            if (meetsIntermediateRequirement && meetsFinalRequirement) {
               currentPath.push(neighbor);
               currentSteps.push({
                 from: node,

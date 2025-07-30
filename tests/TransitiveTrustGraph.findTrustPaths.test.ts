@@ -97,16 +97,28 @@ describe("TransitiveTrustGraph.findTrustPaths", () => {
     expect(paths2).toHaveLength(1); // Can reach E in 4 hops
   });
 
-  test("respects minTrustScore option", () => {
+  test("respects minIntermediateTrust option", () => {
     graph.addEdge("A", "B", 0.8, 0.1);
     graph.addEdge("B", "C", 0.8, 0.1);
 
     // Path A->B->C: positive = 0.8 * 0.8 = 0.64, negative = 0.1 + 0.7 * 0.1 = 0.17, net = 0.47
-    const paths1 = graph.findTrustPaths("A", "C", { minTrustScore: 0.4 });
+    const paths1 = graph.findTrustPaths("A", "C", { minIntermediateTrust: 0.4 });
     expect(paths1).toHaveLength(1);
 
-    const paths2 = graph.findTrustPaths("A", "C", { minTrustScore: 0.5 });
-    expect(paths2).toHaveLength(0); // Path score too low
+    const paths2 = graph.findTrustPaths("A", "C", { minIntermediateTrust: 0.5 });
+    expect(paths2).toHaveLength(0); // Path score too low at intermediate node
+  });
+
+  test("respects minFinalTrust option", () => {
+    graph.addEdge("A", "B", 0.9, 0.1);
+    graph.addEdge("B", "C", 0.6, 0.3);
+
+    // Path score at C: pos=0.54, neg=0.34, net=0.20
+    const paths1 = graph.findTrustPaths("A", "C", { minFinalTrust: 0.1 });
+    expect(paths1).toHaveLength(1);
+
+    const paths2 = graph.findTrustPaths("A", "C", { minFinalTrust: 0.3 });
+    expect(paths2).toHaveLength(0); // Final score (0.20) is below 0.3
   });
 
   test("handles cycles correctly", () => {
@@ -241,7 +253,7 @@ describe("TransitiveTrustGraph.findTrustPaths", () => {
     const paths = graph.findTrustPaths("Alice", "Frank", {
       maxPaths: 5,
       maxHops: 4,
-      minTrustScore: 0.2
+      minIntermediateTrust: 0.2
     });
 
     // Should find exactly 2 paths

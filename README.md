@@ -101,7 +101,7 @@ graph.addEdge("David", "Frank", 0.8, 0.1);
 const paths = graph.findTrustPaths("Alice", "Frank", {
   maxPaths: 5,      // Return up to 5 paths
   maxHops: 4,       // Maximum path length of 4
-  minTrustScore: 0.2 // Only paths with net trust >= 0.2
+  minIntermediateTrust: 0.2 // Minimum trust score at each intermediate node
 });
 
 console.log(`Found ${paths.length} paths from Alice to Frank:`);
@@ -135,7 +135,7 @@ paths.forEach((path, i) => {
 //     Eve → Frank: +0.9 / -0.05
 
 // Note: The path through Charlie (Alice → Charlie → David → Frank) 
-// has a negative trust score (-0.021) and is filtered out by minTrustScore
+// has a negative trust score (-0.021) and is filtered out by minIntermediateTrust
 ```
 
 ## API Reference
@@ -221,7 +221,8 @@ Finds trust paths between a source and target node.
   - `options?: FindTrustPathsOptions` - Optional configuration:
     - `maxPaths?: number` - Maximum number of paths to return (default: 10).
     - `maxHops?: number` - Maximum path length (default: 6).
-    - `minTrustScore?: number` - Minimum trust score threshold (default: 0).
+    - `minFinalTrust?: number` - Minimum trust score required at the target node (default: 0).
+    - `minIntermediateTrust?: number` - Minimum trust score required at each intermediate node (default: 0).
 - **Returns:**
   - An array of `TrustPath` objects sorted by net score (highest first), where each path contains:
     - `source: string` - The source node.
@@ -276,9 +277,10 @@ Options for finding trust paths:
 
 ```typescript
 interface FindTrustPathsOptions {
-  maxPaths?: number;      // Maximum number of paths to return (default: 10)
-  maxHops?: number;       // Maximum path length (default: 6)
-  minTrustScore?: number; // Minimum trust score threshold (default: 0)
+  maxPaths?: number;           // Maximum number of paths to return (default: 10)
+  maxHops?: number;            // Maximum path length (default: 6)
+  minFinalTrust?: number;      // Minimum trust score required at the target node (default: 0)
+  minIntermediateTrust?: number; // Minimum trust score required at each intermediate node (default: 0)
 }
 ```
 
