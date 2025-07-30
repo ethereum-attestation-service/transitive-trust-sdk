@@ -109,4 +109,63 @@ describe("PriorityQueue", () => {
     // First 10 should be 20, 19, 18, ..., 11
     expect(extracted).toEqual([20, 19, 18, 17, 16, 15, 14, 13, 12, 11]);
   });
+
+  test("peek returns max without removing it", () => {
+    pq.insert("A", 5);
+    pq.insert("B", 10);
+    pq.insert("C", 3);
+
+    expect(pq.peek()).toEqual({ key: "B", priority: 10 });
+    expect(pq.peek()).toEqual({ key: "B", priority: 10 }); // Still there
+    expect(pq.extractMax()).toEqual({ key: "B", priority: 10 });
+    expect(pq.peek()).toEqual({ key: "A", priority: 5 }); // Now A is max
+  });
+
+  test("peek returns null for empty queue", () => {
+    expect(pq.peek()).toBeNull();
+  });
+
+  test("contains method works correctly", () => {
+    expect(pq.contains("A")).toBe(false);
+    pq.insert("A", 5);
+    expect(pq.contains("A")).toBe(true);
+    pq.extractMax();
+    expect(pq.contains("A")).toBe(false);
+  });
+
+  test("performance: updatePriority with large dataset", () => {
+    const n = 10000;
+    const startInsert = Date.now();
+    
+    // Insert n elements
+    for (let i = 0; i < n; i++) {
+      pq.insert(`Node${i}`, i);
+    }
+    const insertTime = Date.now() - startInsert;
+    
+    // Update priorities for half the elements
+    const startUpdate = Date.now();
+    for (let i = 0; i < n / 2; i++) {
+      pq.updatePriority(`Node${i}`, n + i);
+    }
+    const updateTime = Date.now() - startUpdate;
+    
+    // Verify correctness - top elements should be the updated ones
+    const top5 = [];
+    for (let i = 0; i < 5; i++) {
+      const item = pq.extractMax();
+      if (item) top5.push(item.key);
+    }
+    
+    expect(top5).toEqual([
+      `Node${n/2 - 1}`,
+      `Node${n/2 - 2}`,
+      `Node${n/2 - 3}`,
+      `Node${n/2 - 4}`,
+      `Node${n/2 - 5}`
+    ]);
+    
+    // Performance assertions - updates should be fast
+    expect(updateTime).toBeLessThan(insertTime * 2); // Updates shouldn't be much slower than inserts
+  });
 });
